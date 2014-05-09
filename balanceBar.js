@@ -1,7 +1,4 @@
-var X_SIZE = 800;
-var Y_SIZE = 600;
-
-var game = new Phaser.Game(X_SIZE, Y_SIZE, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
 function preload() {
     game.load.image('sky', 'assets/sky.png');
@@ -18,7 +15,7 @@ var scoreText;
 var star;
 var star_x;
 var star_y;
-var life = 3;
+var life = 2;
 var lifeText;
 var playButton;
 
@@ -42,13 +39,12 @@ function create() {
     createNewStar(stars);
 
     scoreText = game.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: '#000'});
-    lifeText = game.add.text(680, 16, 'Life: 3', {fontSize: '32px', fill: '#000'});
+    lifeText = game.add.text(680, 16, 'Life: ' + life, {fontSize: '32px', fill: '#000'});
 }
 
 function collectStar(player, star) {
     star.kill();
-    score += 10 * Math.abs(player.body.velocity.x);
-    scoreText.text = 'Score: ' + score;
+    setScore(score + 10 * Math.abs(player.body.velocity.x));
     createNewStar(stars);
 }
 
@@ -60,7 +56,7 @@ function createNewStar(stars) {
 }
 
 function createPlayer() {
-    var player = game.add.sprite(300, 150, 'dude');
+    var player = game.add.sprite(400, 150, 'dude');
     game.physics.enable(player, Phaser.Physics.ARCADE);
     player.body.gravity.y = 600;
     player.checkWorldBounds = true;
@@ -69,35 +65,48 @@ function createPlayer() {
 }
 
 function resetPlayer(player) {
-    player.reset(300, 150);
-    life -= 1;
-    lifeText.text = 'Life: ' + life;
-    if (life == 1) {
+    player.reset(400, 150);
+    setLife(life - 1);
+    if (life <= 1) {
         player.events.onOutOfBounds.removeAll(this);
         player.events.onOutOfBounds.add(gameOver, this);
+    } else {
+        player.reset(400, 150);
     }
 }
 
 function gameOver() {
+    player.kill();
+    setLife(0);
     game.add.text(300, 200, 'GAME OVER', {fontSize: '64px', fill: '#000'});
     game.add.text(220, 233, 'Press Space to Restart', {fontSize: '24px', fill: '#000'});
 }
 
+function setLife(n) {
+    life = n;
+    lifeText.text = 'Life: ' + life;
+}
+
+function setScore(n) {
+    score = n;
+    scoreText.text = 'Score: ' + score;
+}
+
 function update() {
-    if (life == 0) {
+    if (life <= 0) {
         if (playButton.isDown) {
-            life = 3;
-            score = 0;
-            resetPlayer();
+            setLife(3);
+            setScore(0);
+            createPlayer();
         }
     } else {
         game.physics.arcade.collide(player, platforms);
         game.physics.arcade.overlap(player, stars, collectStar, null, this);
 
         if (cursors.left.isDown) {
-            player.body.velocity.x -= 30;
+            player.body.velocity.x -= 20;
         } else if (cursors.right.isDown) {
-            player.body.velocity.x += 30;
+            player.body.velocity.x += 20;
         }
         star.body.x = star_x + (Math.random() - 0.5) * 2;
         star.body.y = star_y + (Math.random() - 0.5) * 2;
